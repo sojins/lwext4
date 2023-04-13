@@ -70,12 +70,20 @@ static int file_dev_open(struct ext4_blockdev *bdev)
 	/*No buffering at file.*/
 	setbuf(dev_file, 0);
 
+#ifndef WIN32
 	if (fseeko(dev_file, 0, SEEK_END))
 		return EFAULT;
 
 	file_dev.part_offset = 0;
 	file_dev.part_size = ftello(dev_file);
 	file_dev.bdif->ph_bcnt = file_dev.part_size / file_dev.bdif->ph_bsize;
+#else
+	if (_fseeki64(dev_file, 0, SEEK_END))
+		return EFAULT;
+	file_dev.part_offset = 0;
+	file_dev.part_size = _ftelli64(dev_file);
+	file_dev.bdif->ph_bcnt = file_dev.part_size / file_dev.bdif->ph_bsize;
+#endif
 
 	return EOK;
 }
@@ -85,8 +93,13 @@ static int file_dev_open(struct ext4_blockdev *bdev)
 static int file_dev_bread(struct ext4_blockdev *bdev, void *buf, uint64_t blk_id,
 			 uint32_t blk_cnt)
 {
+#ifndef WIN32
 	if (fseeko(dev_file, blk_id * bdev->bdif->ph_bsize, SEEK_SET))
 		return EIO;
+#else
+	if (_fseeki64(dev_file, blk_id * bdev->bdif->ph_bsize, SEEK_SET))
+		return EIO;
+#endif
 	if (!blk_cnt)
 		return EOK;
 	if (!fread(buf, bdev->bdif->ph_bsize * blk_cnt, 1, dev_file))
@@ -112,8 +125,13 @@ static void drop_cache(void)
 static int file_dev_bwrite(struct ext4_blockdev *bdev, const void *buf,
 			  uint64_t blk_id, uint32_t blk_cnt)
 {
+#ifndef WIN32
 	if (fseeko(dev_file, blk_id * bdev->bdif->ph_bsize, SEEK_SET))
 		return EIO;
+#else
+	if (_fseeki64(dev_file, blk_id * bdev->bdif->ph_bsize, SEEK_SET))
+		return EIO;
+#endif
 	if (!blk_cnt)
 		return EOK;
 	if (!fwrite(buf, bdev->bdif->ph_bsize * blk_cnt, 1, dev_file))

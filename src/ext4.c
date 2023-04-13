@@ -3148,7 +3148,8 @@ int ext4_dir_mk(const char *path)
 	r = ext4_generic_open(&f, path, "r", false, 0, 0);
 	if (r == EOK)
 		goto Finish;
-
+	printf("cannot support this function in this version.\r\n");
+	return ENOENT;
 	/*Create new directory.*/
 	r = ext4_generic_open(&f, path, "w", false, 0, 0);
 
